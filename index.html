@@ -27,7 +27,15 @@
 (()=>{'use strict';
 const STORAGE_KEY='my-notes-app-v1', $=id=>document.getElementById(id), now=()=>new Date().toISOString();
 // Firebase Console > Project settings > Your apps에서 실제 설정값으로 바꾸세요.
-const FIREBASE_CONFIG={apiKey:'YOUR_API_KEY',authDomain:'YOUR_PROJECT_ID.firebaseapp.com',projectId:'YOUR_PROJECT_ID',appId:'YOUR_APP_ID'};
+const FIREBASE_CONFIG = {
+  apiKey: 'AIzaSyCUwGy8tf6euFYpF39nIyTi8y__NsvVVBM',
+  authDomain: 'my-note-d5d71.firebaseapp.com',
+  projectId: 'my-note-d5d71',
+  appId: '1:889367673781:web:9784e1d011daa8962137fc',
+  storageBucket: 'my-note-d5d71.firebasestorage.app',
+  messagingSenderId: '889367673781',
+  measurementId: 'G-M72EW9VNKW'
+};
 let firebaseReady=false,auth=null,db=null,cloudUser=null,cloudInitialized=false,cloudSaveTimer=null,authMode='signin';
 function firebaseConfigured(){return FIREBASE_CONFIG.apiKey!=='YOUR_API_KEY'&&FIREBASE_CONFIG.projectId!=='YOUR_PROJECT_ID'&&FIREBASE_CONFIG.appId!=='YOUR_APP_ID'}
 const makePage=(title='새 페이지',content='')=>({id:(crypto.randomUUID?crypto.randomUUID():String(Date.now())+Math.random().toString(16).slice(2)),title,content,favorite:false,createdAt:now(),updatedAt:now()});

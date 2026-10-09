@@ -1,552 +1,95 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>노트</title>
-  <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
-    :root {
-      --bg-sidebar: #f7f6f3;
-      --bg-main: #ffffff;
-      --text-main: #37352f;
-      --text-muted: #787774;
-      --hover-bg: #efefed;
-      --active-bg: #e8e7e3;
-      --border-color: #e9e9e8;
-      --danger-color: #eb5757;
-      --danger-hover: #ffebee;
-      --accent-color: #2eaadc;
-      --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-    }
-
-    body {
-      font-family: var(--font-family);
-      color: var(--text-main);
-      background-color: var(--bg-main);
-      display: flex;
-      height: 100vh;
-      overflow: hidden;
-    }
-
-    /* 모바일용 배경 오버레이 */
-    .sidebar-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background-color: rgba(0, 0, 0, 0.4);
-      z-index: 90;
-      display: none;
-    }
-    .sidebar-overlay.active {
-      display: block;
-    }
-
-    /* 사이드바 스타일 */
-    .sidebar {
-      width: 260px;
-      background-color: var(--bg-sidebar);
-      border-right: 1px solid var(--border-color);
-      display: flex;
-      flex-direction: column;
-      flex-shrink: 0;
-      z-index: 100;
-      transition: transform 0.3s ease;
-    }
-
-    .sidebar-header {
-      padding: 16px 14px 10px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-
-    .sidebar-title {
-      font-size: 15px;
-      font-weight: 600;
-      color: var(--text-main);
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .btn-new-page {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-      width: calc(100% - 24px);
-      margin: 4px 12px 12px;
-      padding: 8px 12px;
-      background-color: transparent;
-      border: 1px dashed #d3d1cb;
-      border-radius: 6px;
-      color: var(--text-muted);
-      font-size: 14px;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-
-    .btn-new-page:hover {
-      background-color: var(--hover-bg);
-      color: var(--text-main);
-      border-color: #b4b2ac;
-    }
-
-    .page-list {
-      list-style: none;
-      overflow-y: auto;
-      flex: 1;
-      padding: 0 8px;
-    }
-
-    .page-item {
-      display: flex;
-      align-items: center;
-      padding: 8px 10px;
-      margin-bottom: 2px;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 14px;
-      color: var(--text-muted);
-      transition: background-color 0.15s ease;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .page-item:hover {
-      background-color: var(--hover-bg);
-      color: var(--text-main);
-    }
-
-    .page-item.active {
-      background-color: var(--active-bg);
-      color: var(--text-main);
-      font-weight: 600;
-    }
-
-    .page-item .icon {
-      margin-right: 8px;
-      font-size: 16px;
-      flex-shrink: 0;
-    }
-
-    .page-item .title {
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    /* 메인 편집 영역 */
-    .main-content {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      height: 100%;
-      overflow-y: auto;
-      position: relative;
-    }
-
-    /* 모바일 상단 헤더 */
-    .mobile-header {
-      display: none;
-      align-items: center;
-      justify-content: space-between;
-      padding: 12px 16px;
-      border-bottom: 1px solid var(--border-color);
-      background-color: var(--bg-main);
-    }
-
-    .btn-mobile-toggle {
-      background: none;
-      border: none;
-      font-size: 20px;
-      cursor: pointer;
-      padding: 4px 8px;
-      border-radius: 4px;
-      color: var(--text-main);
-    }
-
-    .btn-mobile-toggle:hover {
-      background-color: var(--hover-bg);
-    }
-
-    /* 에디터 디자인 */
-    .editor-container {
-      max-width: 800px;
-      width: 100%;
-      margin: 0 auto;
-      padding: 40px 60px 100px;
-      display: flex;
-      flex-direction: column;
-      flex: 1;
-    }
-
-    .editor-actions {
-      display: flex;
-      justify-content: flex-end;
-      margin-bottom: 20px;
-    }
-
-    .btn-delete {
-      background: transparent;
-      border: none;
-      color: var(--text-muted);
-      padding: 6px 12px;
-      border-radius: 4px;
-      font-size: 13px;
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-
-    .btn-delete:hover {
-      background-color: var(--danger-hover);
-      color: var(--danger-color);
-    }
-
-    .title-input {
-      width: 100%;
-      border: none;
-      outline: none;
-      font-size: 36px;
-      font-weight: 700;
-      color: var(--text-main);
-      margin-bottom: 16px;
-      background: transparent;
-    }
-
-    .title-input::placeholder {
-      color: #cccccc;
-    }
-
-    .editor-toolbar {
-      display: flex;
-      gap: 8px;
-      margin-bottom: 20px;
-      padding-bottom: 12px;
-      border-bottom: 1px solid var(--border-color);
-    }
-
-    .toolbar-btn {
-      background-color: #f2f1ed;
-      border: none;
-      border-radius: 4px;
-      padding: 6px 12px;
-      font-size: 13px;
-      color: var(--text-main);
-      cursor: pointer;
-      transition: background-color 0.2s ease;
-      display: flex;
-      align-items: center;
-      gap: 4px;
-    }
-
-    .toolbar-btn:hover {
-      background-color: var(--hover-bg);
-    }
-
-    .content-area {
-      flex: 1;
-      outline: none;
-      font-size: 16px;
-      line-height: 1.7;
-      color: var(--text-main);
-      min-height: 300px;
-    }
-
-    .content-area[placeholder]:empty:before {
-      content: attr(placeholder);
-      color: #aaaaaa;
-      cursor: text;
-    }
-
-    /* 할 일 목록(체크박스) 스타일 */
-    .todo-item {
-      display: flex;
-      align-items: flex-start;
-      gap: 10px;
-      margin: 6px 0;
-    }
-
-    .todo-checkbox {
-      margin-top: 5px;
-      width: 17px;
-      height: 17px;
-      cursor: pointer;
-      accent-color: var(--accent-color);
-    }
-
-    .todo-text {
-      flex: 1;
-      outline: none;
-      font-size: 16px;
-      line-height: 1.6;
-    }
-
-    .todo-item.completed .todo-text {
-      text-decoration: line-through;
-      color: var(--text-muted);
-    }
-
-    .editor-heading {
-      font-size: 22px;
-      font-weight: 600;
-      margin-top: 18px;
-      margin-bottom: 8px;
-      outline: none;
-    }
-
-    /* 안내 화면 (Empty State) */
-    .empty-state {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 100%;
-      color: var(--text-muted);
-      text-align: center;
-      padding: 20px;
-    }
-
-    .empty-icon {
-      font-size: 64px;
-      margin-bottom: 16px;
-      opacity: 0.6;
-    }
-
-    .empty-title {
-      font-size: 20px;
-      font-weight: 600;
-      color: var(--text-main);
-      margin-bottom: 8px;
-    }
-
-    .empty-desc {
-      font-size: 14px;
-      margin-bottom: 24px;
-      max-width: 320px;
-      line-height: 1.5;
-    }
-
-    .btn-primary {
-      background-color: var(--accent-color);
-      color: white;
-      border: none;
-      padding: 10px 18px;
-      border-radius: 6px;
-      font-size: 14px;
-      font-weight: 500;
-      cursor: pointer;
-      transition: opacity 0.2s;
-    }
-
-    .btn-primary:hover {
-      opacity: 0.9;
-    }
-
-    .hidden {
-      display: none !important;
-    }
-
-    /* 모바일 대응 레이아웃 */
-    @media (max-width: 768px) {
-      .sidebar {
-        position: fixed;
-        top: 0;
-        bottom: 0;
-        left: 0;
-        transform: translateX(-100%);
-      }
-
-      .sidebar.open {
-        transform: translateX(0);
-      }
-
-      .mobile-header {
-        display: flex;
-      }
-
-      .editor-container {
-        padding: 20px 20px 60px;
-      }
-
-      .title-input {
-        font-size: 28px;
-      }
-    }
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>My Notes</title>
+<style>
+:root{--bg:#f7f7f5;--panel:#fff;--text:#282824;--muted:#77776f;--line:#e7e7e1;--hover:#efefeb;--accent:#586b52;--danger:#b83b3b;--shadow:0 10px 35px #0000000b}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}button,input,textarea{font:inherit}button{cursor:pointer;border:1px solid var(--line);background:var(--panel);color:var(--text);border-radius:8px;padding:8px 11px;transition:background .15s,border-color .15s}button:hover{background:var(--hover)}button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid #87977d;outline-offset:2px}.primary{background:var(--accent);border-color:var(--accent);color:#fff}.primary:hover{background:#465640}.danger{color:var(--danger)}.app{display:grid;grid-template-columns:270px minmax(0,1fr);min-height:100vh}.sidebar{background:#f0f0ec;border-right:1px solid var(--line);padding:18px 13px;display:flex;flex-direction:column;gap:15px}.brand{display:flex;align-items:center;gap:9px;font-weight:750;font-size:17px;padding:2px 6px}.brand-mark{display:grid;place-items:center;width:30px;height:30px;border-radius:9px;background:#dfe5d9;color:#3f5637}.side-actions{display:grid;grid-template-columns:1fr 1fr;gap:7px}.search{width:100%;border:1px solid var(--line);background:#fff;border-radius:8px;padding:9px 10px}.section-title{font-size:11px;letter-spacing:.08em;color:var(--muted);font-weight:700;padding:0 8px;text-transform:uppercase}.page-list{display:flex;flex-direction:column;gap:3px}.page-item{display:flex;align-items:center;gap:7px;padding:7px 8px;border-radius:7px;min-width:0;cursor:pointer;border:1px solid transparent}.page-item:hover{background:#e8e8e2}.page-item.active{background:#fff;border-color:#e4e4dd;box-shadow:0 1px 2px #00000006}.page-item .emoji{flex:none}.page-item .name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;font-size:13px}.page-item .star{color:#8a7742}.side-bottom{margin-top:auto;display:flex;flex-direction:column;gap:7px}.small-note{font-size:11px;color:var(--muted);padding:4px 7px}.main{min-width:0;display:flex;flex-direction:column}.topbar{height:58px;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:0 24px;border-bottom:1px solid var(--line);background:#ffffffa8}.crumb{font-size:13px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.top-actions{display:flex;gap:7px;align-items:center}.mobile-menu{display:none}.editor-wrap{width:min(820px,100%);margin:0 auto;padding:52px 40px 80px;flex:1}.editor-head{display:flex;align-items:center;gap:10px;margin-bottom:14px}.page-icon{font-size:30px}.title-input{width:100%;border:0;background:transparent;font-size:clamp(27px,4vw,38px);font-weight:750;letter-spacing:-.04em;padding:3px 0;color:var(--text)}.title-input:focus{outline:none}.meta{display:flex;align-items:center;gap:9px;font-size:12px;color:var(--muted);margin-bottom:26px}.save-dot{width:6px;height:6px;border-radius:50%;background:#71966b;display:inline-block}.editor{width:100%;min-height:52vh;resize:vertical;border:0;outline:none;background:transparent;font-size:16px;line-height:1.9;color:var(--text);padding:0;white-space:pre-wrap}.editor::placeholder{color:#aaa99f}.toolbar{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:18px;padding-bottom:16px;border-bottom:1px solid var(--line)}.empty{min-height:55vh;display:flex;align-items:center;justify-content:center;text-align:center;color:var(--muted)}.empty h2{color:var(--text);font-size:23px}.empty p{max-width:330px}.status{font-size:12px;color:var(--muted)}.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#292d29;color:#fff;padding:10px 15px;border-radius:9px;box-shadow:var(--shadow);font-size:13px;z-index:10;opacity:0;pointer-events:none;transition:opacity .2s}.toast.show{opacity:1}.overlay{display:none}
+@media(max-width:720px){.app{grid-template-columns:1fr}.sidebar{position:fixed;z-index:5;left:0;top:0;bottom:0;width:285px;transform:translateX(-105%);transition:transform .2s;box-shadow:var(--shadow)}.sidebar.open{transform:translateX(0)}.overlay.show{display:block;position:fixed;inset:0;background:#0005;z-index:4}.mobile-menu{display:inline-flex}.topbar{padding:0 13px}.editor-wrap{padding:32px 20px 55px}.top-actions .desktop-only{display:none}.title-input{font-size:29px}}
+</style>
 </head>
 <body>
-
-  <!-- 모바일 배경 오버레이 -->
-  <div class="sidebar-overlay" id="sidebar-overlay"></div>
-
-  <!-- 사이드바 -->
-  <aside class="sidebar" id="sidebar">
-    <div class="sidebar-header">
-      <div class="sidebar-title">
-        <span>📝</span> 노트
-      </div>
-    </div>
-    <button class="btn-new-page" id="btn-add-page">
-      <span>+</span> 새 페이지 추가
-    </button>
-    <ul class="page-list" id="page-list"></ul>
-  </aside>
-
-  <!-- 메인 영역 -->
-  <main class="main-content">
-    <!-- 모바일 상단바 -->
-    <header class="mobile-header">
-      <button class="btn-mobile-toggle" id="btn-mobile-toggle">☰</button>
-      <div style="font-size: 15px; font-weight: 600;">노트</div>
-      <div style="width: 28px;"></div>
-    </header>
-
-    <!-- 노지 편집 영역 -->
-    <div class="editor-container" id="editor-container">
-      <div class="editor-actions">
-        <button class="btn-delete" id="btn-delete-page">🗑️ 페이지 삭제</button>
-      </div>
-      <input type="text" class="title-input" id="title-input" placeholder="제목 없음">
-      
-      <div class="editor-toolbar">
-        <button class="toolbar-btn" id="btn-add-todo">☑️ 할 일 추가</button>
-        <button class="toolbar-btn" id="btn-add-heading">📌 소제목 추가</button>
-      </div>
-
-      <div class="content-area" id="content-area" contenteditable="true" placeholder="자유롭게 메모를 입력하거나 위 버튼을 눌러 할 일 목록을 추가해보세요..."></div>
-    </div>
-
-    <!-- 빈 상태 안내 화면 -->
-    <div class="empty-state hidden" id="empty-state">
-      <div class="empty-icon">📄</div>
-      <div class="empty-title">작성된 페이지가 없습니다</div>
-      <div class="empty-desc">새로운 페이지를 만들어 아이디어나 할 일을 정리해 보세요.</div>
-      <button class="btn-primary" id="btn-empty-add">+ 새 페이지 만들기</button>
-    </div>
-  </main>
-
-  <script>
-    // LocalStorage 키 설정
-    const STORAGE_KEY = 'notion_app_pages_data';
-    const ACTIVE_PAGE_KEY = 'notion_app_active_id';
-
-    // 앱 데이터 상태
-    let pages = [];
-    let activePageId = null;
-
-    // DOM 요소 참조
-    const sidebar = document.getElementById('sidebar');
-    const sidebarOverlay = document.getElementById('sidebar-overlay');
-    const pageListEl = document.getElementById('page-list');
-    const btnAddPage = document.getElementById('btn-add-page');
-    const btnEmptyAdd = document.getElementById('btn-empty-add');
-    const btnMobileToggle = document.getElementById('btn-mobile-toggle');
-    
-    const editorContainer = document.getElementById('editor-container');
-    const emptyState = document.getElementById('empty-state');
-    const titleInput = document.getElementById('title-input');
-    const contentArea = document.getElementById('content-area');
-    const btnDeletePage = document.getElementById('btn-delete-page');
-    const btnAddTodo = document.getElementById('btn-add-todo');
-    const btnAddHeading = document.getElementById('btn-add-heading');
-
-    // 앱 초기화
-    function init() {
-      loadFromStorage();
-      renderSidebar();
-
-      if (pages.length === 0) {
-        showEmptyState();
-      } else {
-        const exists = pages.some(p => p.id === activePageId);
-        if (!exists) {
-          activePageId = pages[0].id;
-        }
-        selectPage(activePageId);
-      }
-
-      setupEventListeners();
-    }
-
-    // 로컬 스토리지 데이터 불러오기
-    function loadFromStorage() {
-      try {
-        const storedPages = localStorage.getItem(STORAGE_KEY);
-        pages = storedPages ? JSON.parse(storedPages) : [];
-        activePageId = localStorage.getItem(ACTIVE_PAGE_KEY) || null;
-      } catch (e) {
-        console.error('데이터 로드 실패', e);
-        pages = [];
-        activePageId = null;
-      }
-    }
-
-    // 로컬 스토리지에 데이터 저장하기
-    function saveToStorage() {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(pages));
-      if (activePageId) {
-        localStorage.setItem(ACTIVE_PAGE_KEY, activePageId);
-      } else {
-        localStorage.removeItem(ACTIVE_PAGE_KEY);
-      }
-    }
-
-    // 사이드바 목록 렌더링
-    function renderSidebar() {
-      pageListEl.innerHTML = '';
-      pages.forEach(page => {
-        const li = document.createElement('li');
-        li.className = `page-item ${page.id === activePageId ? 'active' : ''}`;
-        li.dataset.id = page.id;
-        
-        const displayTitle = page.title.trim() !== '' ? page.title : '제목 없음';
-        li.innerHTML = `
-          <span class="icon">📄</span>
-          <span class="title">${escapeHtml(displayTitle)}</span>
-        `;
-        
-        li.addEventListener('click', () => {
-          selectPage(page.id);
-          closeMobileSidebar();
-        });
-        pageListEl.appendChild(li);
-      });
-    }
-
-    // 페이지 선택 처리
-    function selectPage(id) {
-      activePageId = id;
-      const page = pages.find(p => p.id === id);
-      if (!page) {
-        showEmptyState();
-        return;
-      }
-
-      showEditor();
-      titleInput.value = page.title || '';
-      contentArea.innerHTML = page.content || '';
-
-      syncCheckboxStates();
-      renderSidebar();
-      saveToStorage();
-    }
-
-    // 새 페이지 생성
-    function createPage() {
-      const newPage = {
-        id: Date.now().toString(),
-        title: '',
-        content: '',
-        createdAt: new Date().toISOString()
-      };
+<div class="overlay" id="overlay"></div>
+<div class="app">
+<aside class="sidebar" id="sidebar">
+  <div class="brand"><span class="brand-mark">✎</span><span>My Notes</span></div>
+  <div class="side-actions"><button class="primary" id="newPageBtn">＋ 새 페이지</button><button id="newChecklistBtn">☑ 체크리스트</button></div>
+  <input class="search" id="searchInput" type="search" placeholder="⌕ 페이지 검색..." aria-label="페이지 검색">
+  <div><div class="section-title">즐겨찾기</div><div class="page-list" id="favoritesList"></div></div>
+  <div><div class="section-title">모든 페이지</div><div class="page-list" id="pagesList"></div></div>
+  <div class="side-bottom">
+    <button id="exportBtn">↓ 노트 백업 내보내기</button>
+    <button id="importBtn">↑ 백업 가져오기</button><input id="importFile" type="file" accept="application/json,.json" hidden>
+    <div class="small-note">이 브라우저에 자동 저장됩니다.</div>
+  </div>
+</aside>
+<main class="main">
+  <header class="topbar"><div style="display:flex;align-items:center;gap:10px;min-width:0"><button class="mobile-menu" id="menuBtn" aria-label="메뉴 열기">☰</button><div class="crumb" id="breadcrumb">내 공간</div></div><div class="top-actions"><button id="favoriteBtn" title="즐겨찾기">☆ 즐겨찾기</button><button class="desktop-only" id="renameBtn">이름 변경</button><button class="desktop-only danger" id="deleteBtn">삭제</button></div></header>
+  <section class="editor-wrap" id="editorWrap"></section>
+</main>
+</div>
+<div class="toast" id="toast" role="status"></div>
+<script>
+(() => {
+  'use strict';
+  const STORAGE_KEY = 'my-notes-app-v1';
+  const $ = id => document.getElementById(id);
+  const now = () => new Date().toISOString();
+  const makePage = (title='새 페이지', content='') => ({id: (crypto.randomUUID ? crypto.randomUUID() : String(Date.now())+Math.random().toString(16).slice(2)), title, content, favorite:false, createdAt:now(), updatedAt:now()});
+  let state = {pages:[], activeId:null};
+  let saveTimer = null, toastTimer = null;
+  function load(){
+    try { const raw=localStorage.getItem(STORAGE_KEY); if(raw){const parsed=JSON.parse(raw);if(Array.isArray(parsed.pages)){state.pages=parsed.pages;state.activeId=parsed.activeId||null;}} } catch(e){ console.warn('노트 데이터를 읽지 못했습니다.',e); }
+    if(!state.pages.length){const p=makePage('첫 번째 노트','여기에 자유롭게 기록해 보세요.\n\n왼쪽에서 새 페이지나 체크리스트를 만들 수 있어요.');state.pages.push(p);state.activeId=p.id;save();}
+    if(!state.pages.some(p=>p.id===state.activeId))state.activeId=state.pages[0]?.id||null;
+  }
+  function save(){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(state));setStatus('자동 저장됨');}catch(e){setStatus('저장 실패');notify('저장 공간이 부족하거나 브라우저 저장이 차단되었어요. 백업을 내보내 주세요.');}}
+  function scheduleSave(){setStatus('저장 중…');clearTimeout(saveTimer);saveTimer=setTimeout(save,250);}
+  function setStatus(s){const el=$('saveStatus');if(el)el.textContent=s;}
+  function notify(message){const el=$('toast');el.textContent=message;el.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove('show'),2400);}
+  function activePage(){return state.pages.find(p=>p.id===state.activeId)||null;}
+  function safeText(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+  function renderLists(){
+    const q=$('searchInput').value.trim().toLowerCase();
+    const filtered=state.pages.filter(p=>!q||(p.title+' '+p.content).toLowerCase().includes(q));
+    const favs=filtered.filter(p=>p.favorite);$('favoritesList').innerHTML='';$('pagesList').innerHTML='';
+    if(!favs.length){const e=document.createElement('div');e.className='small-note';e.textContent=q?'검색 결과 없음':'즐겨찾기가 없어요';$('favoritesList').append(e);}
+    favs.forEach(p=>$('favoritesList').append(makePageItem(p)));
+    if(!filtered.length){const e=document.createElement('div');e.className='small-note';e.textContent='일치하는 페이지가 없어요';$('pagesList').append(e);}
+    filtered.forEach(p=>$('pagesList').append(makePageItem(p)));
+  }
+  function makePageItem(p){const row=document.createElement('div');row.className='page-item'+(p.id===state.activeId?' active':'');row.tabIndex=0;row.setAttribute('role','button');row.setAttribute('aria-label',p.title+' 열기');const icon=document.createElement('span');icon.className='emoji';icon.textContent=p.title.startsWith('☑ ')?'☑':'▤';const name=document.createElement('span');name.className='name';name.textContent=p.title||'제목 없음';row.append(icon,name);if(p.favorite){const star=document.createElement('span');star.className='star';star.textContent='★';row.append(star);}row.addEventListener('click',()=>selectPage(p.id));row.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();selectPage(p.id);}});return row;}
+  function renderEditor(){const p=activePage();const wrap=$('editorWrap');wrap.innerHTML='';if(!p){wrap.innerHTML='<div class="empty"><div><h2>아직 페이지가 없어요</h2><p>새 페이지 버튼을 눌러 첫 노트를 만들어 보세요.</p><button class="primary" id="emptyNewBtn">＋ 새 페이지</button></div></div>';$('emptyNewBtn').onclick=createPage;return;}
+    $('breadcrumb').textContent=p.title||'제목 없음';
+    const head=document.createElement('div');head.className='editor-head';const icon=document.createElement('span');icon.className='page-icon';icon.textContent=p.title.startsWith('☑ ')?'☑':'📝';const title=document.createElement('input');title.className='title-input';title.value=p.title.replace(/^☑ /,'');title.placeholder='제목 없음';title.setAttribute('aria-label','페이지 제목');title.addEventListener('input',()=>{p.title=(p.title.startsWith('☑ ')?'☑ ':'')+title.value;p.updatedAt=now();$('breadcrumb').textContent=p.title||'제목 없음';renderLists();scheduleSave();});head.append(icon,title);wrap.append(head);
+    const meta=document.createElement('div');meta.className='meta';meta.innerHTML='<span class="save-dot"></span><span id="saveStatus">자동 저장됨</span><span>·</span><span>이 브라우저에 저장</span>';wrap.append(meta);
+    const toolbar=document.createElement('div');toolbar.className='toolbar';const addButton=(label,fn)=>{const b=document.createElement('button');b.type='button';b.textContent=label;b.addEventListener('click',fn);toolbar.append(b);};
+    let editor;
+    addButton('＋ 체크 항목',()=>insertAtCursor(editor,'- [ ] 할 일\n'));
+    addButton('• 글머리 기호',()=>insertAtCursor(editor,'• '));
+    addButton('1. 번호 목록',()=>insertAtCursor(editor,'1. '));
+    addButton('引用 인용',()=>insertAtCursor(editor,'> '));
+    addButton('날짜 삽입',()=>insertAtCursor(editor,new Date().toLocaleDateString('ko-KR')+' '));wrap.append(toolbar);
+    editor=document.createElement('textarea');editor.className='editor';editor.placeholder='생각을 자유롭게 기록하세요…\n\n체크 항목을 추가하려면 위의 “＋ 체크 항목”을 눌러 보세요.';editor.value=p.content||'';editor.setAttribute('aria-label','노트 내용');editor.addEventListener('input',()=>{p.content=editor.value;p.updatedAt=now();scheduleSave();if($('searchInput').value.trim())renderLists();});wrap.append(editor);
+    const hint=document.createElement('div');hint.className='status';hint.style.marginTop='14px';hint.textContent='팁: 체크 항목은 “- [ ] 할 일” 형식으로 기록됩니다. 체크하려면 [ ]를 [x]로 바꿔 주세요.';wrap.append(hint);
+    $('favoriteBtn').textContent=p.favorite?'★ 즐겨찾기 해제':'☆ 즐겨찾기';$('favoriteBtn').disabled=false;$('renameBtn').disabled=false;$('deleteBtn').disabled=false;
+  }
+  function render(){renderLists();renderEditor();}
+  function selectPage(id){state.activeId=id;save();render();if(window.matchMedia('(max-width:720px)').matches)closeMenu();}
+  function createPage(content='',title='새 페이지'){const p=makePage(title,content);state.pages.unshift(p);state.activeId=p.id;save();render();closeMenu();const input=document.querySelector('.title-input');if(input){input.focus();input.select();}notify('새 페이지를 만들었어요.');}
+  function createChecklist(){createPage('- [ ] 첫 번째 할 일\n- [ ] 두 번째 할 일\n- [ ] 완료한 일은 [x]로 표시하세요.','☑ 체크리스트');}
+  function renamePage(){const p=activePage();if(!p)return;const current=p.title.replace(/^☑ /,'');const next=prompt('새 페이지 이름을 입력하세요.',current);if(next===null)return;const trimmed=next.trim();if(!trimmed){notify('페이지 이름은 비워 둘 수 없어요.');return;}p.title=(p.title.startsWith('☑ ')?'☑ ':'')+trimmed;p.updatedAt=now();save();render();notify('페이지 이름을 바꿨어요.');}
+  function deletePage(){const p=activePage();if(!p)return;if(!confirm('“'+p.title+'” 페이지를 삭제할까요? 이 작업은 되돌리기 어려워요.'))return;state.pages=state.pages.filter(x=>x.id!==p.id);state.activeId=state.pages[0]?.id||null;if(!state.pages.length){const n=makePage('첫 번째 노트','');state.pages.push(n);state.activeId=n.id;}save();render();notify('페이지를 삭제했어요.');}
+  function toggleFavorite(){const p=activePage();if(!p)return;p.favorite=!p.favorite;save();render();notify(p.favorite?'즐겨찾기에 추가했어요.':'즐겨찾기에서 해제했어요.');}
+  function insertAtCursor(text){const editor=document.querySelector('.editor');if(!editor)return;const start=editor.selectionStart,end=editor.selectionEnd;editor.setRangeText(text,start,end,'end');editor.dispatchEvent(new Event('input',{bubbles:true}));editor.focus();}
+  function exportBackup(){const blob=new Blob([JSON.stringify({format:'my-notes-backup',version:1,exportedAt:now(),...state},null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='my-notes-backup-'+new Date().toISOString().slice(0,10)+'.json';document.body.append(a);a.click();a.remove();URL.revokeObjectURL(url);notify('백업 파일을 내보냈어요.');}
+  function importBackup(file){if(!file)return;const reader=new FileReader();reader.onload=()=>{try{const data=JSON.parse(reader.result);if(!Array.isArray(data.pages)||!data.pages.every(p=>p&&typeof p.id==='string'&&typeof p.title==='string'))throw new Error('형식 오류');if(!confirm('현재 노트를 백업 파일의 내용으로 교체할까요? 먼저 현재 노트를 백업하는 것을 권장해요.'))return;state={pages:data.pages.map(p=>({id:p.id,title:p.title,content:String(p.content||''),favorite:!!p.favorite,createdAt:p.createdAt||now(),updatedAt:p.updatedAt||now()})),activeId:data.activeId||data.pages[0]?.id||null};if(!state.pages.length){const p=makePage();state.pages.push(p);state.activeId=p.id;}if(!state.pages.some(p=>p.id===state.activeId))state.activeId=state.pages[0].id;save();render();notify('백업을 가져왔어요.');}catch(e){notify('올바른 My Notes 백업 파일이 아니에요.');}};reader.readAsText(file);}
+  function openMenu(){$('sidebar').classList.add('open');$('overlay').classList.add('show');}function closeMenu(){$('sidebar').classList.remove('open');$('overlay').classList.remove('show');}
+  $('newPageBtn').addEventListener('click',()=>createPage());$('newChecklistBtn').addEventListener('click',createChecklist);$('renameBtn').addEventListener('click',renamePage);$('deleteBtn').addEventListener('click',deletePage);$('favoriteBtn').addEventListener('click',toggleFavorite);$('searchInput').addEventListener('input',renderLists);$('exportBtn').addEventListener('click',exportBackup);$('importBtn').addEventListener('click',()=>$('importFile').click());$('importFile').addEventListener('change',e=>{importBackup(e.target.files[0]);e.target.value='';});$('menuBtn').addEventListener('click',openMenu);$('overlay').addEventListener('click',closeMenu);
+  load();render();
+})();
+</script>
+</body>
+</html>

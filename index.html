@@ -1,40 +1,552 @@
-
 <!DOCTYPE html>
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>My Notes</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>노트</title>
   <style>
-    body {
-      max-width: 700px;
-      margin: 50px auto;
-      padding: 20px;
-      font-family: sans-serif;
-      background: #f7f7f5;
-      color: #37352f;
-    }
-    textarea {
-      width: 100%;
-      height: 300px;
-      padding: 16px;
+    * {
       box-sizing: border-box;
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      font: inherit;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --bg-sidebar: #f7f6f3;
+      --bg-main: #ffffff;
+      --text-main: #37352f;
+      --text-muted: #787774;
+      --hover-bg: #efefed;
+      --active-bg: #e8e7e3;
+      --border-color: #e9e9e8;
+      --danger-color: #eb5757;
+      --danger-hover: #ffebee;
+      --accent-color: #2eaadc;
+      --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+
+    body {
+      font-family: var(--font-family);
+      color: var(--text-main);
+      background-color: var(--bg-main);
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* 모바일용 배경 오버레이 */
+    .sidebar-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(0, 0, 0, 0.4);
+      z-index: 90;
+      display: none;
+    }
+    .sidebar-overlay.active {
+      display: block;
+    }
+
+    /* 사이드바 스타일 */
+    .sidebar {
+      width: 260px;
+      background-color: var(--bg-sidebar);
+      border-right: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      z-index: 100;
+      transition: transform 0.3s ease;
+    }
+
+    .sidebar-header {
+      padding: 16px 14px 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .sidebar-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-new-page {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      width: calc(100% - 24px);
+      margin: 4px 12px 12px;
+      padding: 8px 12px;
+      background-color: transparent;
+      border: 1px dashed #d3d1cb;
+      border-radius: 6px;
+      color: var(--text-muted);
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .btn-new-page:hover {
+      background-color: var(--hover-bg);
+      color: var(--text-main);
+      border-color: #b4b2ac;
+    }
+
+    .page-list {
+      list-style: none;
+      overflow-y: auto;
+      flex: 1;
+      padding: 0 8px;
+    }
+
+    .page-item {
+      display: flex;
+      align-items: center;
+      padding: 8px 10px;
+      margin-bottom: 2px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      color: var(--text-muted);
+      transition: background-color 0.15s ease;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .page-item:hover {
+      background-color: var(--hover-bg);
+      color: var(--text-main);
+    }
+
+    .page-item.active {
+      background-color: var(--active-bg);
+      color: var(--text-main);
+      font-weight: 600;
+    }
+
+    .page-item .icon {
+      margin-right: 8px;
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+
+    .page-item .title {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    /* 메인 편집 영역 */
+    .main-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      overflow-y: auto;
+      position: relative;
+    }
+
+    /* 모바일 상단 헤더 */
+    .mobile-header {
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border-color);
+      background-color: var(--bg-main);
+    }
+
+    .btn-mobile-toggle {
+      background: none;
+      border: none;
+      font-size: 20px;
+      cursor: pointer;
+      padding: 4px 8px;
+      border-radius: 4px;
+      color: var(--text-main);
+    }
+
+    .btn-mobile-toggle:hover {
+      background-color: var(--hover-bg);
+    }
+
+    /* 에디터 디자인 */
+    .editor-container {
+      max-width: 800px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 40px 60px 100px;
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+    }
+
+    .editor-actions {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 20px;
+    }
+
+    .btn-delete {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 6px 12px;
+      border-radius: 4px;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .btn-delete:hover {
+      background-color: var(--danger-hover);
+      color: var(--danger-color);
+    }
+
+    .title-input {
+      width: 100%;
+      border: none;
+      outline: none;
+      font-size: 36px;
+      font-weight: 700;
+      color: var(--text-main);
+      margin-bottom: 16px;
+      background: transparent;
+    }
+
+    .title-input::placeholder {
+      color: #cccccc;
+    }
+
+    .editor-toolbar {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .toolbar-btn {
+      background-color: #f2f1ed;
+      border: none;
+      border-radius: 4px;
+      padding: 6px 12px;
+      font-size: 13px;
+      color: var(--text-main);
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .toolbar-btn:hover {
+      background-color: var(--hover-bg);
+    }
+
+    .content-area {
+      flex: 1;
+      outline: none;
+      font-size: 16px;
+      line-height: 1.7;
+      color: var(--text-main);
+      min-height: 300px;
+    }
+
+    .content-area[placeholder]:empty:before {
+      content: attr(placeholder);
+      color: #aaaaaa;
+      cursor: text;
+    }
+
+    /* 할 일 목록(체크박스) 스타일 */
+    .todo-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      margin: 6px 0;
+    }
+
+    .todo-checkbox {
+      margin-top: 5px;
+      width: 17px;
+      height: 17px;
+      cursor: pointer;
+      accent-color: var(--accent-color);
+    }
+
+    .todo-text {
+      flex: 1;
+      outline: none;
+      font-size: 16px;
+      line-height: 1.6;
+    }
+
+    .todo-item.completed .todo-text {
+      text-decoration: line-through;
+      color: var(--text-muted);
+    }
+
+    .editor-heading {
+      font-size: 22px;
+      font-weight: 600;
+      margin-top: 18px;
+      margin-bottom: 8px;
+      outline: none;
+    }
+
+    /* 안내 화면 (Empty State) */
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      color: var(--text-muted);
+      text-align: center;
+      padding: 20px;
+    }
+
+    .empty-icon {
+      font-size: 64px;
+      margin-bottom: 16px;
+      opacity: 0.6;
+    }
+
+    .empty-title {
+      font-size: 20px;
+      font-weight: 600;
+      color: var(--text-main);
+      margin-bottom: 8px;
+    }
+
+    .empty-desc {
+      font-size: 14px;
+      margin-bottom: 24px;
+      max-width: 320px;
+      line-height: 1.5;
+    }
+
+    .btn-primary {
+      background-color: var(--accent-color);
+      color: white;
+      border: none;
+      padding: 10px 18px;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+
+    .btn-primary:hover {
+      opacity: 0.9;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    /* 모바일 대응 레이아웃 */
+    @media (max-width: 768px) {
+      .sidebar {
+        position: fixed;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        transform: translateX(-100%);
+      }
+
+      .sidebar.open {
+        transform: translateX(0);
+      }
+
+      .mobile-header {
+        display: flex;
+      }
+
+      .editor-container {
+        padding: 20px 20px 60px;
+      }
+
+      .title-input {
+        font-size: 28px;
+      }
     }
   </style>
 </head>
 <body>
-  <h1>My Notes ✏️</h1>
-  <p>나만의 노트 공간</p>
-  <textarea id="note" placeholder="여기에 노트를 작성하세요."></textarea>
+
+  <!-- 모바일 배경 오버레이 -->
+  <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+  <!-- 사이드바 -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-title">
+        <span>📝</span> 노트
+      </div>
+    </div>
+    <button class="btn-new-page" id="btn-add-page">
+      <span>+</span> 새 페이지 추가
+    </button>
+    <ul class="page-list" id="page-list"></ul>
+  </aside>
+
+  <!-- 메인 영역 -->
+  <main class="main-content">
+    <!-- 모바일 상단바 -->
+    <header class="mobile-header">
+      <button class="btn-mobile-toggle" id="btn-mobile-toggle">☰</button>
+      <div style="font-size: 15px; font-weight: 600;">노트</div>
+      <div style="width: 28px;"></div>
+    </header>
+
+    <!-- 노지 편집 영역 -->
+    <div class="editor-container" id="editor-container">
+      <div class="editor-actions">
+        <button class="btn-delete" id="btn-delete-page">🗑️ 페이지 삭제</button>
+      </div>
+      <input type="text" class="title-input" id="title-input" placeholder="제목 없음">
+      
+      <div class="editor-toolbar">
+        <button class="toolbar-btn" id="btn-add-todo">☑️ 할 일 추가</button>
+        <button class="toolbar-btn" id="btn-add-heading">📌 소제목 추가</button>
+      </div>
+
+      <div class="content-area" id="content-area" contenteditable="true" placeholder="자유롭게 메모를 입력하거나 위 버튼을 눌러 할 일 목록을 추가해보세요..."></div>
+    </div>
+
+    <!-- 빈 상태 안내 화면 -->
+    <div class="empty-state hidden" id="empty-state">
+      <div class="empty-icon">📄</div>
+      <div class="empty-title">작성된 페이지가 없습니다</div>
+      <div class="empty-desc">새로운 페이지를 만들어 아이디어나 할 일을 정리해 보세요.</div>
+      <button class="btn-primary" id="btn-empty-add">+ 새 페이지 만들기</button>
+    </div>
+  </main>
+
   <script>
-    const note = document.getElementById("note");
-    note.value = localStorage.getItem("my-note") || "";
-    note.addEventListener("input", () => {
-      localStorage.setItem("my-note", note.value);
-    });
-  </script>
-</body>
-</html>
+    // LocalStorage 키 설정
+    const STORAGE_KEY = 'notion_app_pages_data';
+    const ACTIVE_PAGE_KEY = 'notion_app_active_id';
+
+    // 앱 데이터 상태
+    let pages = [];
+    let activePageId = null;
+
+    // DOM 요소 참조
+    const sidebar = document.getElementById('sidebar');
+    const sidebarOverlay = document.getElementById('sidebar-overlay');
+    const pageListEl = document.getElementById('page-list');
+    const btnAddPage = document.getElementById('btn-add-page');
+    const btnEmptyAdd = document.getElementById('btn-empty-add');
+    const btnMobileToggle = document.getElementById('btn-mobile-toggle');
+    
+    const editorContainer = document.getElementById('editor-container');
+    const emptyState = document.getElementById('empty-state');
+    const titleInput = document.getElementById('title-input');
+    const contentArea = document.getElementById('content-area');
+    const btnDeletePage = document.getElementById('btn-delete-page');
+    const btnAddTodo = document.getElementById('btn-add-todo');
+    const btnAddHeading = document.getElementById('btn-add-heading');
+
+    // 앱 초기화
+    function init() {
+      loadFromStorage();
+      renderSidebar();
+
+      if (pages.length === 0) {
+        showEmptyState();
+      } else {
+        const exists = pages.some(p => p.id === activePageId);
+        if (!exists) {
+          activePageId = pages[0].id;
+        }
+        selectPage(activePageId);
+      }
+
+      setupEventListeners();
+    }
+
+    // 로컬 스토리지 데이터 불러오기
+    function loadFromStorage() {
+      try {
+        const storedPages = localStorage.getItem(STORAGE_KEY);
+        pages = storedPages ? JSON.parse(storedPages) : [];
+        activePageId = localStorage.getItem(ACTIVE_PAGE_KEY) || null;
+      } catch (e) {
+        console.error('데이터 로드 실패', e);
+        pages = [];
+        activePageId = null;
+      }
+    }
+
+    // 로컬 스토리지에 데이터 저장하기
+    function saveToStorage() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(pages));
+      if (activePageId) {
+        localStorage.setItem(ACTIVE_PAGE_KEY, activePageId);
+      } else {
+        localStorage.removeItem(ACTIVE_PAGE_KEY);
+      }
+    }
+
+    // 사이드바 목록 렌더링
+    function renderSidebar() {
+      pageListEl.innerHTML = '';
+      pages.forEach(page => {
+        const li = document.createElement('li');
+        li.className = `page-item ${page.id === activePageId ? 'active' : ''}`;
+        li.dataset.id = page.id;
+        
+        const displayTitle = page.title.trim() !== '' ? page.title : '제목 없음';
+        li.innerHTML = `
+          <span class="icon">📄</span>
+          <span class="title">${escapeHtml(displayTitle)}</span>
+        `;
+        
+        li.addEventListener('click', () => {
+          selectPage(page.id);
+          closeMobileSidebar();
+        });
+        pageListEl.appendChild(li);
+      });
+    }
+
+    // 페이지 선택 처리
+    function selectPage(id) {
+      activePageId = id;
+      const page = pages.find(p => p.id === id);
+      if (!page) {
+        showEmptyState();
+        return;
+      }
+
+      showEditor();
+      titleInput.value = page.title || '';
+      contentArea.innerHTML = page.content || '';
+
+      syncCheckboxStates();
+      renderSidebar();
+      saveToStorage();
+    }
+
+    // 새 페이지 생성
+    function createPage() {
+      const newPage = {
+        id: Date.now().toString(),
+        title: '',
+        content: '',
+        createdAt: new Date().toISOString()
+      };

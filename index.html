@@ -72,7 +72,43 @@ const hint=document.createElement('div');hint.className='status';hint.style.marg
 function syncContent(){const e=$('richEditor'),p=activePage();if(!e||!p)return;e.querySelectorAll('.math-token').forEach(n=>{const latex=n.getAttribute('data-latex');if(latex!==null&&!n.querySelector('.MathJax'))n.textContent='\\('+latex+'\\)'});e.querySelectorAll('.task-row input[type=checkbox]').forEach(cb=>{if(cb.checked)cb.setAttribute('checked','');else cb.removeAttribute('checked')});p.content=e.innerHTML;p.updatedAt=now();scheduleSave()}
 function rememberEditorSelection(){const e=$('richEditor'),sel=window.getSelection();if(e&&sel&&sel.rangeCount&&e.contains(sel.anchorNode))savedEditorRange=sel.getRangeAt(0).cloneRange()}
 function restoreEditorSelection(){const e=$('richEditor'),sel=window.getSelection();if(!e||!sel)return false;e.focus();if(savedEditorRange&&e.contains(savedEditorRange.commonAncestorContainer)){sel.removeAllRanges();sel.addRange(savedEditorRange);return true}return !!(sel.rangeCount&&e.contains(sel.anchorNode))}
-function addColorSelect(toolbar,label,colors,command){const wrap=document.createElement('label');wrap.className='format-select';wrap.append(document.createTextNode(label+' '));const select=document.createElement('select');select.setAttribute('aria-label',label);select.innerHTML='<option value="">색 선택</option>'+colors.map(([name,color])=>`<option value="${color}">${name}</option>`).join('');select.addEventListener('mousedown',rememberEditorSelection);select.addEventListener('focus',rememberEditorSelection);select.addEventListener('change',()=>{if(!select.value)return;restoreEditorSelection();if(command==='hiliteColor'){document.execCommand('hiliteColor',false,select.value);if(select.value==='transparent')document.execCommand('backColor',false,'transparent')}else document.execCommand(command,false,select.value);syncContent();select.value='';});wrap.append(select);$('richEditor')?.addEventListener('keyup',rememberEditorSelection);$('richEditor')?.addEventListener('mouseup',rememberEditorSelection);toolbar.append(wrap)}
+function addColorSelect(toolbar,label,colors,command){const wrap=document.createElement('label');wrap.className='format-select';wrap.append(document.createTextNode(label+' '));const select=document.createElement('select');select.setAttribute('aria-label',label);select.innerHTML='<option value="">색 선택</option>'+colors.map(([name,color])=>`<option value="${color}">${name}</option>`).join('');select.addEventListener('mousedown',rememberEditorSelection);select.addEventListener('focus',rememberEditorSelection);select.addEventListener('change',()=>{
+  if(!select.value)return;
+  const color=select.value;
+  const restored=restoreEditorSelection();
+  const editor=$('richEditor');
+  const selection=window.getSelection();
+  if(command==='hiliteColor'){
+    // 형광펜은 선택한 텍스트에만 적용하고, 이후 입력은 일반 글씨로 되돌립니다.
+    if(restored && selection && selection.rangeCount && !selection.getRangeAt(0).collapsed){
+      if(color==='transparent'){
+        document.execCommand('hiliteColor',false,'transparent');
+        document.execCommand('backColor',false,'transparent');
+      }else{
+        document.execCommand('hiliteColor',false,color);
+      }
+      const applied=window.getSelection();
+      if(applied && applied.rangeCount){
+        const endRange=applied.getRangeAt(0).cloneRange();
+        endRange.collapse(false);
+        applied.removeAllRanges();
+        applied.addRange(endRange);
+        // 커서에서 이어 쓰는 글에 형광펜이 계속 묻어나지 않도록 입력 서식을 초기화합니다.
+        document.execCommand('hiliteColor',false,'transparent');
+      }
+      savedEditorRange=null;
+      editor?.focus();
+      syncContent();
+    }else{
+      notify('먼저 글에서 형광펜을 칠할 부분을 드래그해 선택해 주세요.');
+      editor?.focus();
+    }
+  }else{
+    if(restored)document.execCommand(command,false,color);
+    syncContent();
+  }
+  select.value='';
+});wrap.append(select);$('richEditor')?.addEventListener('keyup',rememberEditorSelection);$('richEditor')?.addEventListener('mouseup',rememberEditorSelection);toolbar.append(wrap)}
 function placeCaret(node){node.focus();const r=document.createRange();r.selectNodeContents(node);r.collapse(false);const s=getSelection();s.removeAllRanges();s.addRange(r)}
 function insertHtml(html){const e=$('richEditor');if(!e)return;e.focus();const sel=getSelection();if(sel&&sel.rangeCount&&e.contains(sel.anchorNode)){const r=sel.getRangeAt(0);r.deleteContents();const f=r.createContextualFragment(html);const last=f.lastChild;r.insertNode(f);if(last){r.setStartAfter(last);r.collapse(true);sel.removeAllRanges();sel.addRange(r)}}else{e.insertAdjacentHTML('beforeend',html);placeCaret(e.lastElementChild||e)}syncContent();typesetMath(e)}
 function insertTask(){insertHtml('<div class="task-row"><input type="checkbox" contenteditable="false"><span class="task-text" data-placeholder="할 일">할 일</span></div><p><br></p>');const e=$('richEditor');const tasks=e.querySelectorAll('.task-text');if(tasks.length)placeCaret(tasks[tasks.length-1])}
